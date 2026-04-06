@@ -54,7 +54,9 @@ int main(){
     boxes.push_back({rect,1.0f});
   }
 
-  bool hideBoxes = false;
+  //Boxes' visibility is conditional
+  //Initially, on a key press (snapping)
+  bool showBoxes = true;
 
   Uint32 checkPointTime = SDL_GetTicks();
 
@@ -70,7 +72,7 @@ int main(){
 	running = false;
       else if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_t)
       {
-	hideBoxes = false;
+	showBoxes = true;
 	checkPointTime = SDL_GetTicks();
       }
 
@@ -79,15 +81,15 @@ int main(){
     //Check if 3 seconds have elapsed
     Uint32 currTime = SDL_GetTicks();
     if(currTime - checkPointTime >= 3000)
-      hideBoxes = true;    
+      showBoxes = false;    
 
     //Paint the white(off-white) screen
     SDL_SetRenderDrawColor(renderer, 191, 191, 191, 191);
     SDL_RenderClear(renderer);
-
-    //If initial blip --> need to show all the rectangles
-    //will last for 3 seconds
-    if(!hideBoxes)
+    
+    //Check if the window to show boxes is open
+    //to be open for 3 seconds
+    if(showBoxes)
     {
       //Set Render color to black (to draw rectangles)
       SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
