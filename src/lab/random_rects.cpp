@@ -4,6 +4,7 @@
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
+#include <SDL2/SDL_stdinc.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
 #include <cstdlib>
@@ -11,6 +12,12 @@
 #include <vector>
 
 using namespace std;
+
+
+struct box {
+  SDL_Rect rect;
+  float visibility; //ranges from 0.0 -> 1.0
+};
 
 /*
  * This is an in-progress module.
@@ -29,57 +36,68 @@ int main(){
   bool running = true;
   SDL_Event event;
 
-  //Define an array of rectangles
-  vector<SDL_Rect> rectangles;
-
   //Seed the random generator with time
   srand(time(0));
 
+  //Create an array of boxes with random dimensions and positions
+  vector<box> boxes;
+
+  for(int i=0;i<10;i++){
+    // Generate random dimenstion
+    int side = 20 + rand()%150;
+
+    //Generate random position
+    int p1 = rand()%1280;
+    int p2 = rand()%720;
+
+    SDL_Rect rect = {p1, p2, side, side};
+    boxes.push_back({rect,1.0f});
+  }
+
+  bool hideBoxes = false;
+
   Uint32 checkPointTime = SDL_GetTicks();
 
+
+  /*
+   * Let the rendering begin
+   */
   while(running){
 
     while(SDL_PollEvent(&event))
     {
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
-      {
 	running = false;
+      else if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_t)
+      {
+	hideBoxes = false;
+	checkPointTime = SDL_GetTicks();
       }
+
     }
 
     //Check if 3 seconds have elapsed
     Uint32 currTime = SDL_GetTicks();
-    if(currTime - checkPointTime >= 2000)
-    {
-      // Generate random dimenstions
-      int x = 20 + rand()%150;
-      int y = 20 + rand()%150;
+    if(currTime - checkPointTime >= 3000)
+      hideBoxes = true;    
 
-      //Generate random position
-      int p1 = rand()%1280;
-      int p2 = rand()%720;
-
-      SDL_Rect rect = {p1, p2, x, y};
-      rectangles.push_back(rect);
-
-      //Update the checkpoint
-      checkPointTime = currTime;
-    }
-    
-
-
-    
-    //Clear the screen - set the color to white
+    //Paint the white(off-white) screen
     SDL_SetRenderDrawColor(renderer, 191, 191, 191, 191);
     SDL_RenderClear(renderer);
 
-    //Set Render color to black (to draw rectangles)
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
+    //If initial blip --> need to show all the rectangles
+    //will last for 3 seconds
+    if(!hideBoxes)
+    {
+      //Set Render color to black (to draw rectangles)
+      SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
 
-    //Render each rectangle present in the array
-    for(auto rect : rectangles)
-      SDL_RenderFillRect(renderer, &rect);
+      //Render each rectangle present in the array
+      for(auto box : boxes)
+	SDL_RenderFillRect(renderer, &box.rect);
 
+    }
+    
     SDL_RenderPresent(renderer);
 
   }
