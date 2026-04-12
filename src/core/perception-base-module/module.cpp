@@ -7,6 +7,7 @@
 #include <SDL2/SDL_stdinc.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
+#include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <vector>
@@ -15,6 +16,7 @@ using namespace std;
 
 const int NUM_BOXES=25;
 const int BOX_SIZE=50;
+const int RESONANCE_PROXIMITY=200; // Radius of the player's sense that activates on 'snapping'
 
 /*
  * ---------------
@@ -34,7 +36,9 @@ struct box {
  * ----------------
  */
 
-void UpdatePlayerPosition(SDL_FPoint& player, float delta_time)
+
+//Update player's position based on the keyboard's keystates
+void updatePlayerPosition(SDL_FPoint& player, float delta_time)
 {
     const float speed = 200.0f;
     const Uint8* keystate = SDL_GetKeyboardState(NULL);
@@ -62,10 +66,25 @@ void UpdatePlayerPosition(SDL_FPoint& player, float delta_time)
 
 }
 
+//Update the visibility of the boxes based on user' position and the 
+//pre-defined 'resonance radar'
+void updateBoxesVisibility(vector<box> &boxes, SDL_FPoint player){
+  for(auto &box : boxes)
+  {
+    float dist = sqrt((box.rect.x - player.x)*(box.rect.x - player.x) + (box.rect.y - player.y)* (box.rect.y - player.y));
+    if(dist <= RESONANCE_PROXIMITY)
+      box.visibility = 1.0f;
+    else
+      box.visibility = 0.0f;
+
+  }
+
+}
+
+
 int main(){
   SDL_Window *window = SDL_CreateWindow("White board", 0, 0, 1280, 720, 0);
-  SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-
+  SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
   //Enable transparency
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
@@ -108,6 +127,11 @@ int main(){
   Uint32 fps_delta_checkpoint_time = SDL_GetTicks(); 
 
 
+  //Declaring outside for debugging purpose
+  //variable is needed, defining outside the loop is not
+  float delta_time;
+
+
   /*
    * Let the rendering begin
    */
@@ -120,6 +144,7 @@ int main(){
       else if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_t)
       {
 	show_boxes = true;
+	updateBoxesVisibility(boxes,player);
 	visibility_checkpoint_time = SDL_GetTicks();
       }
 
@@ -134,8 +159,8 @@ int main(){
 
 
     //Update player's position
-    float delta_time = (curr_time - fps_delta_checkpoint_time)/1000.0f;
-    UpdatePlayerPosition(player, delta_time);
+    delta_time = (curr_time - fps_delta_checkpoint_time)/1000.0f;
+    updatePlayerPosition(player, delta_time);
     
 
     //Paint the white(off-white) screen
@@ -151,12 +176,13 @@ int main(){
     //to be open for 3 seconds
     if(show_boxes)
     {
-      //Set Render color to black (to draw rectangles)
-      SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
 
       //Render each rectangle present in the array
       for(auto box : boxes)
+      {
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, (int)255*box.visibility); 
 	SDL_RenderFillRect(renderer, &box.rect);
+      }
 
     }
     
