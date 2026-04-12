@@ -13,6 +13,8 @@
 
 using namespace std;
 
+const int NUM_BOXES=25;
+const int BOX_SIZE=50;
 
 /*
  * ---------------
@@ -77,16 +79,22 @@ int main(){
   //Position variable for the player
   SDL_FPoint player = {640, 360}; 
 
-  //Create an array of boxes with random dimensions and positions
+  //Create an array at positions
   vector<box> boxes;
   srand(time(0));
-  for(int i=0;i<10;i++){
-    // Generate random dimenstion
-    int side = 20 + rand()%150;
 
-    //Generate random position
+  for(int i = 0; i < NUM_BOXES; i++){
+
+    int side = BOX_SIZE;
+
+    // Generate random position for the box 
     int p1 = rand()%1280;
     int p2 = rand()%720;
+
+    //Consider a screen-wide grid where each cell is BOX_SIZE * BOX_SIZE
+    //Each random box should fit in one of the grid cells
+    p1 = p1 - p1%50;
+    p2 = p2 - p2%50;
 
     SDL_Rect rect = {p1, p2, side, side};
     boxes.push_back({rect,1.0f});
